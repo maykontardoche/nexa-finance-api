@@ -22,8 +22,11 @@ endpoint é criado ou alterado.
 - **Status de recusa:** 400 entrada malformada ou inválida · 401 sem credencial · 403 sem
   permissão · 404 não encontrado · 405 método não suportado (com `Allow`) · 415 `Content-Type`
   não suportado · 500 erro inesperado.
-- **Formatos, paginação, filtros, idempotência:** definidos quando o primeiro endpoint de
-  negócio entrar (Fase 2+).
+- **Formatos:** JSON em `camelCase`. Texto de identificação (nome, e-mail) perde os espaços das
+  pontas antes da validação; e-mail é comparado sem diferença de caixa. Senha chega intacta.
+- **Respostas que não revelam contas:** cadastro e reenvio de confirmação respondem **igual**
+  (status, corpo e headers) exista ou não a conta; quem fica sabendo é o dono, por e-mail.
+- **Paginação e filtros:** definidos com a primeira listagem.
 
 ## Modelo de erro
 
@@ -61,27 +64,47 @@ Slug existente nunca muda de significado. Slug novo entra no `ProblemType`, em
 | `method-not-allowed` | 405 | método não suportado na rota; header `Allow` lista os aceitos |
 | `unsupported-media-type` | 415 | `Content-Type` não aceito pela rota |
 | `internal-error` | 500 | erro inesperado, com detalhe genérico. Também cobre qualquer 5xx sem slug próprio, mantendo o status real |
+| `invalid-token` | 400 | link ou código enviado por e-mail inexistente, expirado ou já usado. Os três casos têm a mesma resposta, de propósito |
 
 ## Autenticação
 
-**Fechado por padrão** (ADR-0005). Ainda não existe mecanismo de login (Fase 2), então hoje só as
-rotas públicas respondem.
+**Fechado por padrão** (ADR-0005). Ainda não existe mecanismo de login, então hoje só as rotas
+públicas respondem.
 
-- **Públicas (só `GET` e `HEAD`):** `/actuator/health`, `/v3/api-docs/**`, `/swagger-ui.html`,
-  `/swagger-ui/**`. Detalhe em *Plataforma*.
-- **Todo o resto exige autenticação**, inclusive escrita (`POST`, `PUT`, `DELETE`…) nas rotas públicas.
+- **Públicas, por método e caminho** (`SecurityConfig.PUBLIC_ROUTES`):
+  - `GET` e `HEAD` em `/actuator/health`, `/v3/api-docs/**`, `/swagger-ui.html` e
+    `/swagger-ui/**` (detalhe em *Plataforma*);
+  - `POST /api/v1/auth/register`, `GET /api/v1/auth/email-verification` e
+    `POST /api/v1/auth/email-verification/resend` (detalhe em *Cadastro*).
+- **Todo o resto exige autenticação**, inclusive outro método numa rota pública (ex.:
+  `GET /api/v1/auth/register` → 401).
 - **Sem credencial válida → 401 `unauthorized` antes do roteamento**, inclusive para rota
   inexistente. *Refinamento:* 404, 405, 400 e 415 só aparecem para requisição
   autenticada, o que evita enumeração de rotas.
 - **Autenticado sem permissão → 403 `forbidden`**, com mensagem genérica.
 - Por enquanto, a resposta 401 não traz `WWW-Authenticate`: o esquema (ex.: `Bearer`) entra com o
-  mecanismo de login na Fase 2.
+  mecanismo de login.
+
+---
+
+## Cadastro (`/api/v1/auth`)
+
+Rotas públicas. Nenhuma revela se um e-mail tem conta.
+
+| Método | Endpoint | Descrição | Acesso |
+|--------|----------|-----------|--------|
+| POST | `/api/v1/auth/register` | `{ fullName, email, password }` → **202** sem corpo, **exista ou não** conta com o e-mail. Conta nova: recebe o link de confirmação (24 h, uso único). E-mail já cadastrado: nada é criado e o dono recebe um aviso. `fullName` 1–100 caracteres; `email` válido, até 254; `password` de 15 a 128 caracteres (qualquer caractere; contados depois da normalização Unicode NFKC), recusada se for comum ou contiver o e-mail. **400** `validation-error` com `errors[]` (a senha recusada vem com o motivo em `field: "password"`; resposta igual para e-mail novo e existente). Idempotência: repetir não cria segunda conta (o e-mail é único); só gera outro aviso. ✅ | pública |
+| GET | `/api/v1/auth/email-verification?token=` | Endereço do link do e-mail. → **200** `{ message }` e a conta passa a ter e-mail confirmado. Token vale uma vez e por 24 h. **400** `invalid-token` para token ausente, desconhecido, expirado ou já usado (mesma resposta). O token nunca volta no corpo nem no `instance`. ✅ | pública |
+| POST | `/api/v1/auth/email-verification/resend` | `{ email }` → **202** sem corpo, sempre. Se houver conta **não confirmada**, um link novo é enviado e os anteriores deixam de valer; conta inexistente ou já confirmada: nada é enviado. **400** `validation-error` se o e-mail faltar ou for malformado. ✅ | pública |
+
+E-mails chegam à caixa local (Mailpit, `http://localhost:8025`) e trazem o link escrito por
+extenso, sobre `APP_BASE_URL`.
 
 ---
 
 ## Plataforma
 
-Fora do prefixo `/api/v1` e do OpenAPI. São as únicas rotas públicas (ADR-0005), só para leitura.
+Fora do prefixo `/api/v1` e do OpenAPI. Públicas (ADR-0005), só para leitura.
 
 | Método | Endpoint | Descrição | Acesso |
 |--------|----------|-----------|--------|

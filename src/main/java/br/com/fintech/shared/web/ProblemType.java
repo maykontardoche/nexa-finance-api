@@ -17,7 +17,8 @@ public enum ProblemType {
     NOT_FOUND("not-found", HttpStatus.NOT_FOUND),
     METHOD_NOT_ALLOWED("method-not-allowed", HttpStatus.METHOD_NOT_ALLOWED),
     UNSUPPORTED_MEDIA_TYPE("unsupported-media-type", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
-    INTERNAL("internal-error", HttpStatus.INTERNAL_SERVER_ERROR);
+    INTERNAL("internal-error", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_TOKEN("invalid-token", HttpStatus.BAD_REQUEST);
 
     public static final String URN_PREFIX = "urn:nexa-finance:problem:";
 
@@ -44,11 +45,12 @@ public enum ProblemType {
     /**
      * Tipo de um erro do framework a partir do status. Status sem slug próprio cai na família:
      * 4xx vira {@code bad-request} e 5xx vira {@code internal-error}, mantendo o status real.
-     * Validação não passa por aqui, porque tem o mesmo status de {@code bad-request}.
+     * Os slugs de negócio (validação, token inválido) não passam por aqui: dividem o status 400
+     * com {@code bad-request} e só saem de um handler que sabe o motivo.
      */
     public static ProblemType forStatus(HttpStatusCode status) {
         for (ProblemType type : values()) {
-            if (type != VALIDATION && type.status.value() == status.value()) {
+            if (type != VALIDATION && type != INVALID_TOKEN && type.status.value() == status.value()) {
                 return type;
             }
         }
