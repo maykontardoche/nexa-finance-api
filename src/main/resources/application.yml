@@ -10,8 +10,18 @@ spring:
     hikari:
       # Com o banco fora, o health responde DOWN em ~2 s em vez de esperar os 30 s padrão.
       connection-timeout: 2000  # ms: o Hikari recebe o long direto, sem conversão de Duration
+      data-source-properties:
+        # Sem o "Detail" do servidor nas exceções: numa violação de UNIQUE ele traz o valor
+        # (e-mail, hash de credencial), que iria parar no log do Hibernate e no do erro 500.
+        logServerErrorDetail: false
   flyway:
     locations: classpath:db/migration
+  jpa:
+    # O schema é do Flyway; o Hibernate só confere que as entidades batem com ele.
+    hibernate:
+      ddl-auto: validate
+    # Sem sessão do JPA aberta durante a escrita da resposta: consulta fica no serviço, em transação.
+    open-in-view: false
 
 management:
   endpoints:

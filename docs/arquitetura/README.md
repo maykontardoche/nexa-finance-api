@@ -17,7 +17,7 @@ descartável para os testes.
 ```mermaid
 flowchart LR
   user[Avaliador ou desenvolvedor] -->|HTTP| api[Nexa Finance API<br/>Spring Boot 4.1 / Java 25]
-  api -->|JDBC + Flyway| db[(PostgreSQL 18)]
+  api -->|JPA + Flyway| db[(PostgreSQL 18)]
   ci[GitHub Actions] -.->|build, testes, fumaça, varreduras| api
 ```
 
@@ -62,18 +62,26 @@ flowchart LR
 | `ApiExceptionHandler` | Converte erros do MVC e da segurança em RFC 9457; loga 5xx com stack só no servidor | `br.com.fintech.shared.web` |
 | `ProblemDetailsSecurityHandlers` | 401/403 dos filtros, delegados ao `ApiExceptionHandler` | `br.com.fintech.shared.web` |
 | `ProblemDetailsErrorController` | Erros fora do MVC (filtros, container), mesmo formato e headers de segurança | `br.com.fintech.shared.web` |
-| Flyway | Migrations em `src/main/resources/db/migration`, aplicadas no startup | dependência |
+| Flyway | Migrations em `src/main/resources/db/migration`, aplicadas no startup; único dono do schema (ADR-0008) | dependência |
+| `User` + `UserRepository` | Conta do usuário (e-mail normalizado e único, só o hash da senha) | `br.com.fintech.user.domain` |
+| `Session`, `EmailToken`, `SecurityEvent` + repositórios | Sessões com o hash da credencial de renovação (ADR-0006), tokens de e-mail de uso único (só o hash) e atividade de segurança | `br.com.fintech.auth.domain` |
 
 ## Convenções
 
 - **Camadas e direção de dependência:** cada módulo de domínio (Fases 2–4) terá `api` →
   `application` → `domain` ← `infrastructure`. Os módulos dependem de `shared`, nunca o
   contrário; `domain` não conhece Spring Web nem JDBC.
+- **Persistência:** Spring Data JPA sobre o schema do Flyway, com `ddl-auto=validate` e
+  `open-in-view=false` (ADR-0008). Entidades de módulos diferentes se referenciam pelo id
+  (`user_id`), não por associação JPA; a exclusão do usuário apaga o que é dele por
+  `ON DELETE CASCADE` no banco.
 - **Tratamento de erro:** só pelo `ProblemFactory`; slug novo entra no `ProblemType`, nas
   mensagens pt-BR e no [`api-contract.md`](api-contract.md) (ADR-0004).
 - **Autorização:** sempre no servidor; rota pública só pela `PUBLIC_PATHS`, com teste (ADR-0005).
 - **Logs e auditoria:** `traceId`/`spanId` em todo log de requisição; JSON (ECS) no contêiner;
-  nunca senha, token, header `Authorization` ou corpo de requisição em log.
+  nunca senha, token, header `Authorization` ou corpo de requisição em log. O driver do
+  PostgreSQL roda com `logServerErrorDetail=false`, para que uma violação de UNIQUE não leve o
+  valor duplicado (e-mail, hash) para a exceção e o log.
 
 ## Contrato de API
 
