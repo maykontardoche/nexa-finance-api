@@ -1,0 +1,11 @@
+# Perfil de desenvolvimento local (./mvnw spring-boot:run -Dspring-boot.run.profiles=local).
+# Logs em texto legível e mais detalhe do código do projeto. Segredo não fica aqui: vem do .env.
+spring:
+  config:
+    # Só no perfil local: `./mvnw spring-boot:run -Dspring-boot.run.profiles=local` lê o mesmo .env
+    # do Compose. Testes e contêiner não leem o .env de quem roda; usam o próprio ambiente.
+    import: optional:file:.env[.properties]
+
+logging:
+  level:
+    br.com.fintech: debug

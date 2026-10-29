@@ -1,0 +1,64 @@
+# Ambiente local. Credenciais vêm do .env (copie de .env.example).
+#   docker compose up -d db                       só o banco (app via ./mvnw, perfil local)
+#   docker compose --profile app up -d --build    banco + aplicação em contêiner
+name: nexa-finance
+
+# Rotação de log para os dois serviços: com o banco fora, cada checagem do health loga ~18 kB.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+services:
+  db:
+    image: postgres:18.6
+    environment:
+      POSTGRES_DB: ${DB_NAME:?defina DB_NAME no .env (modelo em .env.example)}
+      POSTGRES_USER: ${DB_USERNAME:?defina DB_USERNAME no .env (modelo em .env.example)}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env (modelo em .env.example)}
+    ports:
+      # Só na interface local: o banco de dev não fica exposto na rede.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # A partir do 18, a imagem guarda os dados em /var/lib/postgresql/<versão>/docker.
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    mem_limit: 512m
+    logging: *logging
+
+  app:
+    profiles: [app]
+    build: .
+    image: nexa-finance-api:local
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Dentro da rede do Compose o banco é o serviço "db", não o localhost do .env.
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:?defina DB_NAME no .env (modelo em .env.example)}
+      DB_USERNAME: ${DB_USERNAME:?defina DB_USERNAME no .env (modelo em .env.example)}
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env (modelo em .env.example)}
+    ports:
+      # Só na interface local; a porta do host vem de SERVER_PORT (padrão 8080).
+      - "127.0.0.1:${SERVER_PORT:-8080}:8080"
+    # O healthcheck vem do Dockerfile (/actuator/health).
+    # Com MaxRAMPercentage=75, o heap fica em ~768 MB dentro deste limite, e não em 75% da VM.
+    mem_limit: 1g
+    # Endurecimento: sistema de arquivos só leitura (o Tomcat escreve só no /tmp), nenhuma
+    # capability do Linux e nenhum ganho de privilégio.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+
+volumes:
+  db-data:

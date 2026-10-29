@@ -1,0 +1,5 @@
+# Perfil dos testes automatizados. O banco vem do Testcontainers (@ServiceConnection),
+# então DB_URL, DB_USERNAME e DB_PASSWORD não são lidos aqui.
+spring:
+  main:
+    banner-mode: off

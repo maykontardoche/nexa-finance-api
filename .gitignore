@@ -1,0 +1,30 @@
+# Build
+target/
+*.class
+
+# Maven wrapper: versiona o script e o .properties, não o jar baixado
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE (configuração pessoal não é versionada, nem .vscode/settings.json)
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+
+# SO
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Segredos e configuração local: segredo só no .env (nunca versionado).
+# application-local.yml é versionado porque não guarda segredo, só lê variáveis.
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+

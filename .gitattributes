@@ -1,2 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Maven Wrapper: o script POSIX precisa de LF (roda no Linux/CI) e o .cmd de CRLF
+mvnw text eol=lf
+*.cmd text eol=crlf
+
+# Scripts de shell rodam no Linux (CI, contêiner): sempre LF
+*.sh text eol=lf
