@@ -1,0 +1,16 @@
+# Só o necessário para o build entra no contexto: nada de histórico, artefato local nem segredo.
+.git
+.github
+.idea
+.vscode
+target
+docs
+*.md
+*.log
+.env
+.env.*
+**/.env
+**/.env.*
+compose.yaml
+Dockerfile
+.dockerignore

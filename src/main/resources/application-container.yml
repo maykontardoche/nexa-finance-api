@@ -1,0 +1,7 @@
+# Perfil do contêiner (Dockerfile define SPRING_PROFILES_ACTIVE=container).
+# Log em JSON (ECS), uma linha por evento (stack trace inclusive, em error.stack_trace), com
+# traceId e spanId de topo vindos da correlação do tracing (MDC).
+logging:
+  structured:
+    format:
+      console: ecs
