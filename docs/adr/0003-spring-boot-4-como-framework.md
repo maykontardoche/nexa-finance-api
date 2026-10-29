@@ -1,7 +1,7 @@
 ---
 status: Aceito
 date: 2026-10-28
-decision-makers: Maykon Tardoche (responsável pelo projeto)
+decision-makers: Maykon Tardoche
 ---
 
 # ADR-0003: Construir a API sobre Spring Boot 4.1.x, com starters modulares e Maven Wrapper
@@ -20,7 +20,7 @@ O build precisa rodar sem Maven instalado, e hoje o Maven não está no PATH. O 
 
 ## Drivers da decisão
 
-1. Cobertura nativa dos RFs transversais: segurança, Problem Details, Actuator, OpenAPI, Flyway e Testcontainers.
+1. Cobertura nativa dos requisitos transversais: segurança, Problem Details, Actuator, OpenAPI, Flyway e Testcontainers.
 2. Suporte ativo durante toda a vida do MVP.
 3. Familiaridade e valor de portfólio no mercado Java.
 4. Build reproduzível sem ferramenta global.
@@ -34,7 +34,7 @@ O build precisa rodar sem Maven instalado, e hoje o Maven não está no PATH. O 
 
 ## Decisão
 
-Escolhida: **Spring Boot 4.1.x**, porque cobre todos os RFs transversais com recursos nativos (driver 1) e é a linha suportada (driver 2).
+Escolhida: **Spring Boot 4.1.x**, porque cobre todos os requisitos transversais com recursos nativos (driver 1) e é a linha suportada (driver 2).
 
 O que passa a valer:
 - parent `spring-boot-starter-parent` na última patch 4.1.x;
@@ -78,7 +78,6 @@ O que passa a valer:
 - Drivers: 1 e 3 reprovados.
 
 ## Links
-
 
 - ADRs relacionados: ADR-0002 (Java 25), ADR-0004 (erro), ADR-0005 (negação por padrão)
 - Referências:

@@ -36,7 +36,7 @@ Escolha a forma conforme o histórico:
 | Os commits com o segredo só têm conteúdo descartável e não há commits bons depois | Volte a branch ao último commit limpo: `git push --force-with-lease=<branch>:<sha-atual> origin <sha-limpo>:<branch>` |
 | Há commits bons depois do vazamento | `git filter-repo --sensitive-data-removal --invert-paths --path <arquivo>` (git-filter-repo ≥ 2.47) e force-push de todas as branches e tags |
 
-**Peça a confirmação explícita** do dono do repositório mostrando o comando exato. Use sempre `--force-with-lease` com o SHA esperado, nunca `--force` puro.
+**Combine com o dono do repositório** e confira o comando exato antes de executar. Use sempre `--force-with-lease` com o SHA esperado, nunca `--force` puro.
 
 Depois:
 - recrie as branches de trabalho a partir do commit limpo (um merge de branch antiga traz o segredo de volta);
@@ -89,12 +89,12 @@ gitleaks git . --redact                               # 0 leaks (só vale se o c
 |---|---|
 | O que vazou | `jdbc.user` e `jdbc.password` reais em `src/main/resources/application.properties` e na cópia de build `target/classes/application.properties` (commit `fba004e`, de 2025). A `jdbc.url` era placeholder (`HOST:PORT/SERVICENAME`), então o host não foi exposto |
 | Exposição | Repositório público `maykontardoche/atividade-java`, 0 forks em 2026-10-28 |
-| Rotação | **Impossível para o responsável** (conta do ambiente Oracle da FIAP). **2026-10-29:** o responsável informou que o banco Oracle da FIAP **foi desativado** e não será mais disponibilizado. Fonte: declaração do responsável. Não verificado por teste, porque testar login com a credencial vazada continua vetado |
+| Rotação | **Impossível** (conta do ambiente Oracle da FIAP). **2026-10-29:** o banco Oracle da FIAP **foi desativado** e não será mais disponibilizado, segundo o autor. Testar login com a credencial vazada continua vetado |
 | Decisão | **Risco aceito e encerrado** em 2026-10-29: sem host exposto, com o banco desativado, o repositório antigo apagado e o backup local apagado, não resta nenhum uso possível da credencial nem cópia sob controle do projeto |
 | Reescrita | `main` voltou ao `8791983` (commit inicial, só `.gitattributes`). Branch de trabalho recriada a partir dele. |
-| Backup | Era `../_backup-atividade-java-2026-10-28/` (bundle + tar) e a branch local `backup/legado-fba004e`. **Apagados em 2026-10-29** por decisão do responsável, com `git reflog expire --expire=now --all` e `git gc --prune=now`. Depois disso, `git cat-file -t fba004e` dá "Not a valid object name": o legado não existe mais na máquina de dev |
+| Backup | Era `../_backup-atividade-java-2026-10-28/` (bundle + tar) e a branch local `backup/legado-fba004e`. **Apagados em 2026-10-29** com `git reflog expire --expire=now --all` e `git gc --prune=now`. Depois disso, `git cat-file -t fba004e` dá "Not a valid object name": o legado não existe mais na máquina de dev |
 | GitHub Support | **Ticket não enviado e dispensado.** O repositório inteiro foi apagado (linha abaixo), o que remove o commit órfão sem depender do Support. O texto fica abaixo só como referência |
-| Exclusão do repositório | **2026-10-29:** o responsável apagou `maykontardoche/atividade-java` (0 forks, 0 estrelas). Conferido: `gh repo view` responde "Could not resolve to a Repository". O projeto continua em `maykontardoche/nexa-finance-api` (público, criado do zero, sem o `fba004e`). Links antigos para o repositório deixaram de funcionar, inclusive o que a FIAP tinha da entrega "parte 2" |
+| Exclusão do repositório | **2026-10-29:** o repositório `maykontardoche/atividade-java` foi apagado (0 forks, 0 estrelas). Conferido: `gh repo view` responde "Could not resolve to a Repository". O projeto continua em `maykontardoche/nexa-finance-api` (público, criado do zero, sem o `fba004e`). Links antigos para o repositório deixaram de funcionar, inclusive o que a FIAP tinha da entrega "parte 2" |
 | Publicação da `feat/mvp-foundation` | **Resolvida pela exclusão.** As docs citam o SHA do `fba004e`, mas ele não existe em nenhum repositório publicado. Antes do push, gitleaks v8.24.0 rodou sobre `main` e `feat/mvp-foundation`: "no leaks found" (um falso positivo, a senha fictícia de teste, foi marcado com `gitleaks:allow`) |
 
 **Texto do ticket ao GitHub Support** (não enviado: dispensado pela exclusão do repositório; mantido como modelo para um próximo incidente):

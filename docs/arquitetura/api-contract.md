@@ -83,12 +83,12 @@ rotas públicas respondem.
 
 Fora do prefixo `/api/v1` e do OpenAPI. São as únicas rotas públicas (ADR-0005), só para leitura.
 
-| Método | Endpoint | Descrição | Auth / permissão | Épico/Spec |
-|--------|----------|-----------|------------------|------------|
-| GET, HEAD | `/actuator/health` | Estado agregado, incluindo a conectividade com o banco. **200** `{"status":"UP"}` · **503** `{"status":"DOWN"}`. O corpo tem **só** `status`, sem detalhes nem componentes. Com o banco fora, o DOWN sai em ~2 s (`connection-timeout` do Hikari). Medido em 2026-10-29: UP p50 6 ms / p95 11 ms (n=20), DOWN p50 2,008 s (n=5), local. | pública | fundação |
-| GET, HEAD | `/v3/api-docs` | Documento OpenAPI **3.1** (JSON) das rotas `/api/**`, com o schema `ProblemDetail` (corpo de erro padrão); toda operação documenta 401 e 500 com esse schema. | pública | fundação |
-| GET, HEAD | `/v3/api-docs/swagger-config` | Configuração lida pela interface do Swagger. | pública | fundação |
-| GET, HEAD | `/swagger-ui.html` → `/swagger-ui/index.html` | Interface navegável (Swagger UI). O primeiro responde **302** para o segundo. | pública | fundação |
+| Método | Endpoint | Descrição | Acesso |
+|--------|----------|-----------|--------|
+| GET, HEAD | `/actuator/health` | Estado agregado, incluindo a conectividade com o banco. **200** `{"status":"UP"}` · **503** `{"status":"DOWN"}`. O corpo tem **só** `status`, sem detalhes nem componentes. Com o banco fora, o DOWN sai em ~2 s (`connection-timeout` do Hikari). Medido em 2026-10-29: UP p50 6 ms / p95 11 ms (n=20), DOWN p50 2,008 s (n=5), local. | pública |
+| GET, HEAD | `/v3/api-docs` | Documento OpenAPI **3.1** (JSON) das rotas `/api/**`, com o schema `ProblemDetail` (corpo de erro padrão); toda operação documenta 401 e 500 com esse schema. | pública |
+| GET, HEAD | `/v3/api-docs/swagger-config` | Configuração lida pela interface do Swagger. | pública |
+| GET, HEAD | `/swagger-ui.html` → `/swagger-ui/index.html` | Interface navegável (Swagger UI). O primeiro responde **302** para o segundo. | pública |
 
 Nenhum outro endpoint do Actuator existe na web (`/actuator`, `/actuator/env`, `/actuator/beans`…):
 sem credencial → 401; com credencial → 404 `not-found`.
