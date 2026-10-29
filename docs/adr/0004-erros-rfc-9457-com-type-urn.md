@@ -1,7 +1,7 @@
 ---
 status: Aceito
 date: 2026-10-28
-decision-makers: Maykon Tardoche (responsável pelo projeto)
+decision-makers: Maykon Tardoche
 ---
 
 # ADR-0004: Padronizar toda resposta de erro em RFC 9457 com `type` URN estável e textos pt-BR
@@ -56,7 +56,7 @@ O que passa a valer:
 ## Confirmação
 
 - O teste parametrizado do contrato de erro cobre todos os status do catálogo: content-type, campos obrigatórios, `traceId` não nulo, ausência de `Exception`/`at br.`/`SQL` no corpo.
-- O `architect-reviewer` recusa `ResponseEntity` de erro montado fora do `ProblemFactory`.
+- A revisão de código recusa `ResponseEntity` de erro montado fora do `ProblemFactory`.
 
 ## Prós e contras das alternativas
 
@@ -79,7 +79,6 @@ O que passa a valer:
 - Drivers: 2 reprovado.
 
 ## Links
-
 
 - ADRs relacionados: ADR-0003 (Spring Boot, que fornece o `ProblemDetail`), ADR-0005 (o 401 usa este formato)
 - Referências: [Spring Framework — Error Responses](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-ann-rest-exceptions.html); [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)

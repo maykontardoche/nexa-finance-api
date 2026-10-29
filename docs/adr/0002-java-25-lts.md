@@ -1,14 +1,14 @@
 ---
 status: Aceito
 date: 2026-10-28
-decision-makers: Maykon Tardoche (responsável pelo projeto)
+decision-makers: Maykon Tardoche
 ---
 
 # ADR-0002: Fixar Java 25 LTS como versão única do projeto e da CI
 
 ## Contexto e problema
 
-O projeto declara Java 17 (`pom.xml:10-11`), mas o único JDK da máquina de desenvolvimento é o Temurin 25.0.3 LTS (`java -version` executado em 2026-10-28). A fundação exige uma única versão de Java, igual no ambiente local e na CI. O plano inicial deixava a escolha entre 17 e 21 em aberto, e o responsável confirmou que não há exigência acadêmica de versão.
+O projeto original declarava Java 17, mas o único JDK da máquina de desenvolvimento é o Temurin 25.0.3 LTS. A fundação exige uma única versão de Java, igual no ambiente local e na CI. O plano inicial deixava a escolha entre 17 e 21 em aberto, e não há exigência acadêmica de versão.
 
 O framework escolhido (ADR-0003, Spring Boot 4.1.x) suporta Java 17 a 26 ([HeroDevs, 04/2026](https://www.herodevs.com/blog-posts/spring-boot-versions-eol-dates-and-latest-releases-april-2026)).
 
@@ -45,7 +45,7 @@ Vale para `java.version` no `pom.xml`, `actions/setup-java` na CI (distribuiçã
 - `java.version` = 25 no `pom.xml`.
 - `java-version: '25'` no `ci.yml`.
 - Imagens `eclipse-temurin:25-*` no `Dockerfile`.
-- O `architect-reviewer` confere os três juntos.
+- A revisão de código confere os três juntos.
 
 ## Prós e contras das alternativas
 
@@ -62,7 +62,6 @@ Vale para `java.version` no `pom.xml`, `actions/setup-java` na CI (distribuiçã
 - Drivers: 2 ruim, 3 ruim.
 
 ## Links
-
 
 - ADRs relacionados: ADR-0003 (Spring Boot 4.1.x, que define a faixa de Java suportada)
 - Compatibilidade confirmada na prática: o projeto compila, testa e roda com Java 25 sobre o Spring Boot 4.1.2

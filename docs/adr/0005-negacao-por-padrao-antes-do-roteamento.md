@@ -1,7 +1,7 @@
 ---
 status: Aceito
 date: 2026-10-28
-decision-makers: Maykon Tardoche (responsável pelo projeto)
+decision-makers: Maykon Tardoche
 ---
 
 # ADR-0005: Negar por padrão toda rota não pública antes do roteamento, respondendo 401 até para rota inexistente
@@ -48,7 +48,7 @@ O que passa a valer:
 ## Confirmação
 
 - Teste parametrizado: as rotas públicas são exatamente as da lista; privada e inexistente sem credencial → 401.
-- O `security-reviewer` e o `architect-reviewer` recusam `permitAll()` novo sem o teste atualizado.
+- O `SecurityGuardrailsTest` falha o build se surgir `permitAll()` fora da lista pública, e a revisão de código recusa rota pública nova sem o teste atualizado.
 
 ## Prós e contras das alternativas
 
@@ -65,7 +65,6 @@ O que passa a valer:
 - Drivers: 1 reprovado.
 
 ## Links
-
 
 - ADRs relacionados: ADR-0003 (Spring Security vem do Boot), ADR-0004 (formato do 401)
 - Referência: [Spring Security — Authorize HTTP Requests](https://docs.spring.io/spring-security/reference/servlet/authorization/authorize-http-requests.html)
