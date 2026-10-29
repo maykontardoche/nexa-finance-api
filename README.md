@@ -276,7 +276,7 @@ atualizações toda semana, e o `main` é protegido contra force-push.
 |---|---|
 | [`docs/arquitetura/`](docs/arquitetura/README.md) | Arquitetura e componentes |
 | [`docs/arquitetura/api-contract.md`](docs/arquitetura/api-contract.md) | Convenções, catálogo de erros e endpoints |
-| [`docs/adr/`](docs/adr/README.md) | Decisões de arquitetura (ADR-0001 a ADR-0008) |
+| [`docs/adr/`](docs/adr/README.md) | Decisões de arquitetura (ADR-0001 a ADR-0009) |
 | [`docs/runbooks/`](docs/runbooks/README.md) | Procedimentos operacionais |
 
 ## Roadmap

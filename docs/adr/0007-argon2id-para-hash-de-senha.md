@@ -1,5 +1,5 @@
 ---
-status: Aceito
+status: Substituído por ADR-0009
 date: 2026-10-29
 decision-makers: Maykon Tardoche
 ---

@@ -11,5 +11,6 @@ consequências. ADR aceito não se edita: uma decisão nova o substitui.
 | [ADR-0004](0004-erros-rfc-9457-com-type-urn.md) | Padronizar toda resposta de erro em RFC 9457 com `type` URN estável e textos pt-BR | Aceito | 2026-10-28 |
 | [ADR-0005](0005-negacao-por-padrao-antes-do-roteamento.md) | Negar por padrão toda rota não pública antes do roteamento, respondendo 401 até para rota inexistente | Aceito | 2026-10-28 |
 | [ADR-0006](0006-jwt-curto-com-renovacao-opaca-rotacionada.md) | Autenticar com JWT HS256 de 15 minutos e renovação opaca rotacionada por sessão | Aceito | 2026-10-29 |
-| [ADR-0007](0007-argon2id-para-hash-de-senha.md) | Guardar senhas com Argon2id (m=19 MiB, t=2, p=1) via Spring Security e Bouncy Castle | Aceito | 2026-10-29 |
+| [ADR-0007](0007-argon2id-para-hash-de-senha.md) | Guardar senhas com Argon2id (m=19 MiB, t=2, p=1) via Spring Security e Bouncy Castle | Substituído por [ADR-0009](0009-argon2id-com-quatro-iteracoes.md) | 2026-10-29 |
 | [ADR-0008](0008-spring-data-jpa-com-schema-do-flyway.md) | Persistir com Spring Data JPA sobre o schema do Flyway, só validado pelo Hibernate | Aceito | 2026-10-29 |
+| [ADR-0009](0009-argon2id-com-quatro-iteracoes.md) | Guardar senhas com Argon2id m=19 MiB, t=4, p=1, o dobro de iterações do mínimo da OWASP | Aceito | 2026-10-29 |
