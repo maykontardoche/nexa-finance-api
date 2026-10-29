@@ -34,6 +34,8 @@ jobs:
       # Compila, roda os testes (Testcontainers usa o Docker do runner) e empacota.
       - name: verify
         run: ./mvnw -B verify
+      - name: links da documentação
+        run: python3 scripts/check-doc-links.py
 
   container:
     name: container
