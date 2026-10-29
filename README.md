@@ -18,7 +18,7 @@ produção.
 |---|---|
 | Linguagem | Java 25 LTS |
 | Framework | Spring Boot 4.1 (Spring MVC, Spring Security, Actuator) |
-| Banco de dados | PostgreSQL 18, com migrations Flyway |
+| Banco de dados | PostgreSQL 18, Spring Data JPA (Hibernate) e migrations Flyway |
 | Documentação da API | OpenAPI 3.1 e Swagger UI (springdoc) |
 | Observabilidade | Micrometer Tracing com OpenTelemetry (W3C `traceparent`) e logs JSON no contêiner |
 | Testes | JUnit Jupiter, AssertJ, Spring Boot Test e Testcontainers |
@@ -62,8 +62,9 @@ registradas em [ADRs](docs/adr/README.md).
 
 ## Arquitetura
 
-É um monólito modular. Hoje só existe a infraestrutura transversal. Cada módulo de domínio entra em
-uma fase, com as camadas `api`, `application`, `domain` e `infrastructure`.
+É um monólito modular. Cada módulo de domínio entra em uma fase, com as camadas `api`,
+`application`, `domain` e `infrastructure`. Os primeiros são `auth` e `user` (identidade), hoje só
+com as entidades e o schema; os endpoints entram nas próximas versões.
 
 O diagrama abaixo mostra o caminho de uma requisição:
 
@@ -258,6 +259,7 @@ atualizações toda semana, e o `main` é protegido contra force-push.
 .
 ├── src/main/java/br/com/fintech/
 │   ├── NexaFinanceApplication.java   # inicialização
+│   ├── auth/, user/                  # módulos de identidade (entidades e repositórios JPA)
 │   ├── config/                       # segurança, /api/v1, OpenAPI, locale, Tomcat, configuração obrigatória
 │   └── shared/web/                   # contrato de erro (RFC 9457) e respostas 401/403
 ├── src/main/resources/               # application*.yml, mensagens em português, db/migration (Flyway)
@@ -274,7 +276,7 @@ atualizações toda semana, e o `main` é protegido contra force-push.
 |---|---|
 | [`docs/arquitetura/`](docs/arquitetura/README.md) | Arquitetura e componentes |
 | [`docs/arquitetura/api-contract.md`](docs/arquitetura/api-contract.md) | Convenções, catálogo de erros e endpoints |
-| [`docs/adr/`](docs/adr/README.md) | Decisões de arquitetura (ADR-0001 a ADR-0005) |
+| [`docs/adr/`](docs/adr/README.md) | Decisões de arquitetura (ADR-0001 a ADR-0008) |
 | [`docs/runbooks/`](docs/runbooks/README.md) | Procedimentos operacionais |
 
 ## Roadmap

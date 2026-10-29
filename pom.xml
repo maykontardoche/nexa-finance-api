@@ -25,6 +25,11 @@
              quadrática ao interpretar o header W3C tracestate, que a API recebe de qualquer
              cliente). Corrigido na 1.67.0. Remover este override quando o Boot gerenciar >= 1.67. -->
         <opentelemetry.version>1.67.0</opentelemetry.version>
+        <!-- Fora do BOM do Boot: versões fixadas aqui e atualizadas pelo Dependabot. -->
+        <bouncycastle.version>1.86</bouncycastle.version>
+        <bucket4j.version>8.21.0</bucket4j.version>
+        <uap-java.version>1.6.1</uap-java.version>
+        <greenmail.version>2.1.15</greenmail.version>
     </properties>
 
     <dependencies>
@@ -43,7 +48,36 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- Entidades JPA; o schema é do Flyway e o Hibernate só o valida. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <!-- Implementação do Argon2 usada pelo Argon2PasswordEncoder do Spring Security. -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>${bouncycastle.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j_jdk17-core</artifactId>
+            <version>${bucket4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ua-parser</groupId>
+            <artifactId>uap-java</artifactId>
+            <version>${uap-java.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
@@ -103,6 +137,13 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- SMTP embutido nos testes: nenhum e-mail sai da máquina. -->
+        <dependency>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail-junit5</artifactId>
+            <version>${greenmail.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
