@@ -1,0 +1,22 @@
+# Atualizações semanais de dependências: Maven, actions (fixadas por SHA), as imagens
+# do Dockerfile (fixadas por digest) e a do compose.yaml. A imagem do gitleaks, usada num
+# `docker run` do ci.yml, não é rastreada: atualizar à mão (tag + digest).
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly

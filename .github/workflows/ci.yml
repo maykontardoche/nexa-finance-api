@@ -1,0 +1,119 @@
+# CI da Nexa Finance API: porta de entrada do main.
+# Actions de terceiros fixadas por SHA de commit (comentário = versão); o Dependabot atualiza.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Mínimo por padrão; só o dependency-submission pede escrita (API do grafo de dependências).
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Em PR, um push novo cancela o run antigo; no main, todo commit é verificado até o fim.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      # Compila, roda os testes (Testcontainers usa o Docker do runner) e empacota.
+      - name: verify
+        run: ./mvnw -B verify
+
+  container:
+    name: container
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Mesmo caminho do avaliador (README): .env a partir do exemplo, app + banco no Compose.
+      - name: subir app e banco
+        run: |
+          cp .env.example .env
+          docker compose --profile app up -d --build --wait --wait-timeout 180
+      - name: teste de fumaça
+        run: scripts/smoke-test.sh http://localhost:8080
+      - name: logs da app (se falhar)
+        if: failure()
+        run: docker compose --profile app logs app --tail 200
+      - name: derrubar
+        if: always()
+        run: docker compose --profile app down -v
+
+  secrets:
+    name: secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0  # histórico inteiro: segredo removido num commit seguinte continua acusado
+          persist-credentials: false
+      # Imagem oficial fixada por digest (v8.30.1), com as regras padrão + a regra própria do
+      # .gitleaks.toml (credencial em .properties/.yml/.env). --redact: o valor nunca vai para o log.
+      - name: gitleaks
+        run: >
+          docker run --rm -v "$PWD:/repo" -w /repo
+          zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git /repo --config /repo/.gitleaks.toml --redact --no-banner --verbose
+
+  # O grafo estático do GitHub lê o pom.xml sem resolver versões herdadas do parent nem
+  # transitivas: o dependency-review e os alertas do Dependabot ficariam cegos. Este job envia
+  # o grafo resolvido pelo Maven (no PR e no main, que é o que os alertas leem).
+  dependency-submission:
+    name: dependency-submission
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write  # exigido pela API de dependency submission
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - uses: advanced-security/maven-dependency-submission-action@a64327a7329c9939cf675e458452febe1894a70c # v6.0.1
+
+  dependency-review:
+    name: dependency-review
+    needs: dependency-submission
+    # always(): se o envio do grafo falhar, este check falha em vez de ser pulado. Check
+    # obrigatório pulado conta como aprovado na proteção do main.
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: grafo de dependências enviado
+        if: needs.dependency-submission.result != 'success'
+        run: |
+          echo "dependency-submission terminou como '${{ needs.dependency-submission.result }}': sem grafo resolvido, a revisão não vale."
+          exit 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Falha o PR que adicionar dependência com vulnerabilidade conhecida de severidade
+      # moderada ou maior. Espera o snapshot do job anterior ficar disponível.
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          retry-on-snapshot-warnings: true

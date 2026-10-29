@@ -1,0 +1,48 @@
+# Configuração do gitleaks. Estende as regras padrão com regras próprias: no incidente de
+# 2026-10-28 (docs/runbooks) o gitleaks padrão NÃO acusou a credencial Oracle real (`jdbc.user`/`jdbc.password` num
+# .properties), porque as regras genéricas exigem entropia ou formato de token. Estas regras
+# pegam credencial em arquivos de configuração, seja qual for o valor. Controle positivo e
+# negativo registrados em docs/runbooks/remocao-de-segredo-do-historico.md (seção 7).
+title = "nexa-finance-api"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "credencial-em-arquivo-de-configuracao"
+description = "Usuário, senha ou segredo atribuído em .properties, .yml/.yaml ou .env"
+# Chave terminando em password/passwd/pwd/pass/secret/username ou em `.user`/`_user`/`-user`
+# (ex.: jdbc.password, spring.datasource.username, DB_PASSWORD, export DB_PASS, jdbc.user),
+# seguida de valor literal. `${...}` é placeholder de ambiente e não é acusado. O `user` solto
+# fica de fora de propósito: `user:` do Compose e `runAsUser` do k8s não são credencial.
+regex = '''(?im)^[ \t]*(?:export[ \t]+)?[\w.-]*(?:password|passwd|pwd|pass|secret|username|[._-]user)[ \t]*[:=][ \t]*["']?((?:[^\s"'#$]|\$[^{\s])[^\s"'#]{2,})'''
+secretGroup = 1
+path = '''(?i)(\.properties|\.ya?ml|\.env|(^|/)\.env[^/]*)$'''
+keywords = ["password", "passwd", "pwd", "pass", "secret", "user"]
+
+  # Valores fictícios conhecidos do .env.example. Valor real novo continua sendo acusado.
+  [[rules.allowlists]]
+  regexTarget = "secret"
+  regexes = ['''^(troque-me|nexa)$''']
+
+  # Catálogos de mensagens: chaves como `...invalid-password=Senha inválida` são texto ao
+  # usuário, não credencial.
+  [[rules.allowlists]]
+  paths = ['''(^|/)(messages|ValidationMessages)[^/]*\.properties$''']
+
+[[rules]]
+id = "credencial-em-url"
+description = "Usuário e senha embutidos na URL (scheme://user:senha@ ou jdbc:oracle:thin:user/senha@)"
+regex = '''(?i)(?:[a-z][a-z0-9+.-]*://[^\s/@:]+:|jdbc:oracle:thin:[^\s/@:]+/)([^\s/@:]{3,})@'''
+secretGroup = 1
+# Só em configuração: fixtures de teste em código (ex.: postgres://user:x@) não são alvo.
+path = '''(?i)(\.properties|\.ya?ml|\.env|(^|/)\.env[^/]*)$'''
+keywords = ["://", "thin:"]
+
+[[rules]]
+id = "credencial-em-parametro-de-url"
+description = "Senha em parâmetro de URL (?password= / &pwd=)"
+regex = '''(?i)[?&;](?:password|pwd)=([^\s&;"']{3,})'''
+secretGroup = 1
+path = '''(?i)(\.properties|\.ya?ml|\.env|(^|/)\.env[^/]*)$'''
+keywords = ["password=", "pwd="]
