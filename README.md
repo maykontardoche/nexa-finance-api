@@ -1,111 +1,78 @@
-<div align="center">
-
 # Nexa Finance API
 
-**API REST de controle financeiro pessoal, construída com padrões de produção.**
-
 [![CI](https://github.com/maykontardoche/nexa-finance-api/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/maykontardoche/nexa-finance-api/actions/workflows/ci.yml)
-![Java 25 LTS](https://img.shields.io/badge/Java-25_LTS-ED8B00?logo=openjdk&logoColor=white)
-![Spring Boot 4.1](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?logo=springboot&logoColor=white)
-![PostgreSQL 18](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
-![OpenAPI 3.1](https://img.shields.io/badge/OpenAPI-3.1-6BA539?logo=openapiinitiative&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 
-</div>
+API REST de controle financeiro pessoal em Java 25, Spring Boot 4.1 e PostgreSQL 18.
 
-> [!IMPORTANT]
-> Projeto de **portfólio e acadêmico** (FIAP). **Não é um produto financeiro real**: não
-> movimenta dinheiro, não guarda dados reais e não deve ser usado com informações pessoais.
+**Aviso:** este é um projeto de portfólio e acadêmico (FIAP). Não é um produto financeiro real:
+não movimenta dinheiro e não deve receber dados pessoais reais.
 
----
+## Sobre o projeto
 
-## Sumário
-
-- [Visão geral](#visão-geral)
-- [Estágio do projeto](#estágio-do-projeto)
-- [Destaques de engenharia](#destaques-de-engenharia)
-- [Arquitetura](#arquitetura)
-- [Começando](#começando)
-  - [Pré-requisitos](#pré-requisitos)
-  - [Caminho 1 — só Docker](#caminho-1--só-docker-recomendado-para-avaliar)
-  - [Caminho 2 — desenvolvimento com JDK](#caminho-2--desenvolvimento-com-jdk)
-- [Variáveis de ambiente](#variáveis-de-ambiente)
-- [Usando a API](#usando-a-api)
-- [Testes e qualidade](#testes-e-qualidade)
-- [CI e segurança da cadeia de suprimentos](#ci-e-segurança-da-cadeia-de-suprimentos)
-- [Estrutura do repositório](#estrutura-do-repositório)
-- [Documentação](#documentação)
-- [Roadmap](#roadmap)
-- [Fora de escopo](#fora-de-escopo)
-
----
-
-## Visão geral
-
-A **Nexa Finance API** (nome provisório) é o backend de um sistema de finanças pessoais:
-usuários, contas, receitas, despesas, transferências e resumo financeiro. O projeto nasceu como
-entrega acadêmica (uma CLI sobre JDBC e Oracle) e foi refeito do zero como uma API com as
-práticas que se espera de um serviço em produção: contrato de erro padronizado, segurança
-fechada por padrão, rastreabilidade de ponta a ponta, contêiner endurecido e CI como porta de
-entrada do código.
+O objetivo é um backend de finanças pessoais: usuários, contas, receitas, despesas,
+transferências e resumo financeiro. O projeto começou como uma entrega acadêmica (uma CLI sobre
+JDBC e Oracle) e foi refeito do zero como uma API, com as práticas esperadas de um serviço em
+produção.
 
 | Camada | Tecnologia |
 |---|---|
 | Linguagem | Java 25 LTS |
 | Framework | Spring Boot 4.1 (Spring MVC, Spring Security, Actuator) |
-| Banco de dados | PostgreSQL 18 com migrations Flyway |
+| Banco de dados | PostgreSQL 18, com migrations Flyway |
 | Documentação da API | OpenAPI 3.1 e Swagger UI (springdoc) |
-| Observabilidade | Micrometer Tracing + OpenTelemetry (W3C `traceparent`), logs JSON (ECS) |
-| Testes | JUnit 5, AssertJ, Spring Boot Test, Testcontainers |
-| Build e entrega | Maven Wrapper, Docker multi-stage, Docker Compose, GitHub Actions |
+| Observabilidade | Micrometer Tracing com OpenTelemetry (W3C `traceparent`) e logs JSON no contêiner |
+| Testes | JUnit Jupiter, AssertJ, Spring Boot Test e Testcontainers |
+| Build e entrega | Maven Wrapper, Docker, Docker Compose e GitHub Actions |
 
-## Estágio do projeto
+## Estado atual
 
-**Fundação concluída (MVP Fases 0 e 1).** A base que todas as funcionalidades vão herdar está
-pronta e testada. Os endpoints de negócio (cadastro, login, contas, lançamentos) chegam nas
-próximas fases; veja o [roadmap](#roadmap).
+A base da API está pronta. Ainda não há endpoints de negócio: cadastro, login, contas e
+lançamentos entram nas próximas fases (veja o [roadmap](#roadmap)). Hoje a API já:
 
-O que já funciona hoje:
+- sobe junto com o banco com um único comando, sem precisar instalar Java;
+- expõe um health check público que reflete a conexão com o banco;
+- publica a documentação navegável no Swagger UI;
+- responde todo erro no formato RFC 9457 (`application/problem+json`), em português;
+- exige autenticação em tudo que não está na lista pública, inclusive em rotas que não existem;
+- passa por CI com testes, teste de fumaça do contêiner e varreduras de segredos e de
+  dependências.
 
-- Aplicação e banco sobem com **um comando**, sem instalar Java.
-- Health check público que reflete o banco (`UP`/`DOWN`).
-- Documentação navegável da API (Swagger UI).
-- Todo erro no formato **RFC 9457** (`application/problem+json`), em pt-BR.
-- Tudo fora da lista pública exige autenticação, inclusive rotas que não existem.
-- CI com testes, teste de fumaça do contêiner, varredura de segredos e de vulnerabilidades.
+## Como a API funciona
 
-## Destaques de engenharia
+Todo erro segue um único contrato, definido no
+[ADR-0004](docs/adr/0004-erros-rfc-9457-com-type-urn.md). O corpo traz um `type` estável
+(`urn:nexa-finance:problem:<slug>`), o `title` e o `detail` em português, o `instance` e o
+`traceId`. Em erro de validação, o campo `errors` lista todos os campos inválidos de uma vez. O
+corpo nunca expõe stack trace, SQL ou nome de classe: esses detalhes ficam só no log do servidor.
 
-- **Contrato de erro único** ([ADR-0004](docs/adr/0004-erros-rfc-9457-com-type-urn.md)):
-  todo erro sai como RFC 9457, com `type` estável (`urn:nexa-finance:problem:<slug>`),
-  `title` e `detail` em pt-BR, `instance` e `traceId`. Erros de validação listam **todos** os
-  campos inválidos em `errors[]`. Nenhuma resposta expõe stack trace, SQL ou nome de classe.
-- **Negação por padrão** ([ADR-0005](docs/adr/0005-negacao-por-padrao-antes-do-roteamento.md)):
-  sem credencial, qualquer rota fora da lista pública responde `401`, inclusive a inexistente.
-  Assim ninguém descobre quais rotas existem. Um teste falha o build se alguém liberar uma rota
-  fora da lista.
-- **Rastreabilidade:** cada requisição recebe um trace W3C. O `traceId` volta no corpo do erro e
-  aparece em todas as linhas de log daquela requisição. Se o cliente enviar `traceparent`, ele é
-  respeitado.
-- **Falha cedo e com clareza:** sem `DB_URL`, `DB_USERNAME` ou `DB_PASSWORD`, a aplicação não
-  sobe e diz qual variável falta, sem nunca ecoar valores.
-- **Contêiner endurecido:** imagem fixada por digest, processo sem root (UID 10001), sistema de
-  arquivos somente leitura, nenhuma capability do Linux, limite de memória e healthcheck.
-- **Testes que provam algo:** cada regra crítica foi validada por **mutação manual**: o código
-  foi quebrado de propósito para confirmar que o teste correspondente falha.
-- **Decisões registradas:** as escolhas de stack e de contrato estão em
-  [ADRs](docs/adr/README.md), com contexto, alternativas e consequências.
+A segurança é fechada por padrão, conforme o
+[ADR-0005](docs/adr/0005-negacao-por-padrao-antes-do-roteamento.md). Sem credencial, qualquer rota
+fora da lista pública responde `401`, mesmo que ela não exista. Assim, quem não está autenticado
+não consegue descobrir quais rotas existem. Um teste quebra o build se alguém liberar uma rota fora
+dessa lista.
+
+Cada requisição recebe um trace W3C. O `traceId` volta no corpo dos erros e aparece nas linhas de
+log da requisição. Se o cliente envia um `traceparent`, ele é respeitado. Se faltar `DB_URL`,
+`DB_USERNAME` ou `DB_PASSWORD`, a aplicação não sobe e informa qual variável falta, sem mostrar
+nenhum valor.
+
+No contêiner, o processo roda sem root, com sistema de arquivos somente leitura, sem capabilities
+do Linux, com limite de memória e com healthcheck. As decisões de stack e de contrato estão
+registradas em [ADRs](docs/adr/README.md).
 
 ## Arquitetura
 
-Monólito modular: hoje existe a infraestrutura transversal, e os módulos de domínio entram fase
-a fase, cada um com as camadas `api`, `application`, `domain` e `infrastructure`.
+É um monólito modular. Hoje só existe a infraestrutura transversal. Cada módulo de domínio entra em
+uma fase, com as camadas `api`, `application`, `domain` e `infrastructure`.
 
-Descrição do diagrama abaixo: o cliente HTTP passa primeiro pelo filtro de observação (que cria
-ou continua o trace) e depois pela cadeia de segurança. Rotas públicas seguem para o health
-(que consulta o PostgreSQL) e para a documentação OpenAPI. As demais exigem autenticação e
-chegam aos controllers sob `/api/v1`. Qualquer erro, da segurança ou do controller, é convertido
-no formato RFC 9457 por um único componente. O Flyway aplica as migrations no startup.
+O diagrama abaixo mostra o caminho de uma requisição:
+
+1. o filtro de observação cria o trace ou continua o que o cliente enviou;
+2. a cadeia de segurança decide o acesso:
+   - o health (que consulta o PostgreSQL) e a documentação são públicos;
+   - o restante exige autenticação e chega aos controllers sob `/api/v1`;
+3. qualquer erro, da segurança ou do controller, é convertido no formato RFC 9457 por um único
+   componente.
 
 ```mermaid
 flowchart LR
@@ -117,29 +84,23 @@ flowchart LR
   sec -- 401 / 403 --> problem[Contrato de erro<br/>RFC 9457]
   api -- exceção --> problem
   health --> db[(PostgreSQL 18)]
-  flyway[Flyway no startup] --> db
 ```
 
 Mais detalhes em [`docs/arquitetura/`](docs/arquitetura/README.md).
 
-## Começando
+## Como rodar
 
 ### Pré-requisitos
 
-| Caminho | O que instalar |
-|---|---|
-| 1 — só Docker | [Docker](https://docs.docker.com/get-docker/) com Compose v2 (Docker Desktop no Windows e no macOS) |
-| 2 — desenvolvimento | O mesmo Docker **e** um JDK 25 (ex.: [Eclipse Temurin](https://adoptium.net/)). **Não** é preciso instalar Maven: o wrapper do repositório baixa a versão certa e confere o checksum |
+- **Para rodar com Docker:** [Docker](https://docs.docker.com/get-docker/) com Compose v2 (no
+  Windows e no macOS, o Docker Desktop).
+- **Para desenvolver:** o mesmo Docker e um JDK 25 (por exemplo, o
+  [Eclipse Temurin](https://adoptium.net/)). Não é preciso instalar Maven: o wrapper do repositório
+  baixa a versão certa e confere o checksum.
 
-Os comandos abaixo usam a sintaxe de shell POSIX (Linux, macOS, Git Bash). No PowerShell, troque
-`cp` por `Copy-Item` e `./mvnw` por `.\mvnw.cmd`.
+### Com Docker (aplicação e banco em contêiner)
 
-> [!TIP]
-> **Windows:** se o `git clone` falhar com `Filename too long`, habilite caminhos longos no Git
-> (`git config --global core.longpaths true`) ou clone numa pasta de caminho curto (ex.:
-> `C:\projetos`). O limite padrão do Windows é de 260 caracteres por caminho.
-
-### Caminho 1 — só Docker (recomendado para avaliar)
+Linux, macOS ou Git Bash:
 
 ```bash
 git clone https://github.com/maykontardoche/nexa-finance-api.git
@@ -148,24 +109,33 @@ cp .env.example .env
 docker compose --profile app up -d --build --wait
 ```
 
+PowerShell:
+
+```powershell
+git clone https://github.com/maykontardoche/nexa-finance-api.git
+cd nexa-finance-api
+Copy-Item .env.example .env
+docker compose --profile app up -d --build --wait
+```
+
 O `--wait` só termina quando a aplicação e o banco estão saudáveis. Depois disso:
 
-- Health: <http://localhost:8080/actuator/health> → `{"status":"UP"}`
-- Swagger UI: <http://localhost:8080/swagger-ui.html>
+- health: <http://localhost:8080/actuator/health> responde `{"status":"UP"}`;
+- Swagger UI: <http://localhost:8080/swagger-ui.html>.
 
-Para conferir tudo de uma vez (health, segurança e documentação), rode o teste de fumaça:
+Para conferir health, segurança e documentação de uma vez, rode o teste de fumaça. Ele precisa de
+bash, que vem com o Git Bash no Windows:
 
 ```bash
 scripts/smoke-test.sh
 ```
 
-Para parar (o `-v` também apaga os dados do banco):
+Para parar, use `docker compose --profile app down`. Para também apagar os dados do banco,
+acrescente `-v`.
 
-```bash
-docker compose --profile app down
-```
+### Com o JDK (desenvolvimento)
 
-### Caminho 2 — desenvolvimento com JDK
+Linux, macOS ou Git Bash:
 
 ```bash
 git clone https://github.com/maykontardoche/nexa-finance-api.git
@@ -175,23 +145,33 @@ docker compose up -d db
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-No perfil `local`, a aplicação lê o mesmo `.env` do Compose e escreve logs em texto legível.
-Health e Swagger ficam nos mesmos endereços do caminho 1.
+PowerShell (as aspas no `-D` são necessárias; sem elas, o PowerShell quebra o argumento no ponto):
+
+```powershell
+git clone https://github.com/maykontardoche/nexa-finance-api.git
+cd nexa-finance-api
+Copy-Item .env.example .env
+docker compose up -d db
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
+```
+
+No perfil `local`, a aplicação lê o mesmo `.env` do Compose e escreve os logs em texto legível. O
+health e o Swagger ficam nos mesmos endereços.
 
 ## Variáveis de ambiente
 
-Todas ficam no `.env` (nunca versionado). O [`.env.example`](.env.example) traz valores
-fictícios e um comentário por variável.
+As variáveis ficam no `.env`, que nunca é versionado. O [`.env.example`](.env.example) traz valores
+fictícios e um comentário para cada variável.
 
-| Variável | Obrigatória | Exemplo | Para que serve |
+| Variável | Obrigatória | Exemplo | Uso |
 |---|---|---|---|
-| `DB_URL` | Sim | `jdbc:postgresql://localhost:5432/nexa` | URL JDBC do banco no caminho 2. No Compose, a aplicação usa o serviço `db` automaticamente |
-| `DB_USERNAME` | Sim | `nexa` | Usuário do banco; o Compose cria esse usuário |
+| `DB_URL` | Sim | `jdbc:postgresql://localhost:5432/nexa` | URL JDBC do banco ao rodar com o JDK. No Compose, a aplicação usa o serviço `db` |
+| `DB_USERNAME` | Sim | `nexa` | Usuário do banco, criado pelo Compose |
 | `DB_PASSWORD` | Sim | `troque-me` | Senha do banco. Troque por uma sua |
-| `DB_NAME` | Sim (Compose) | `nexa` | Nome do banco criado pelo serviço `db` |
-| `SERVER_PORT` | Não | `8080` | Porta HTTP (no Compose, a porta publicada no host) |
+| `DB_NAME` | Sim, no Compose | `nexa` | Nome do banco criado pelo serviço `db` |
+| `SERVER_PORT` | Não | `8080` | Porta HTTP. No Compose, é a porta publicada no host |
 
-Se faltar uma variável obrigatória, a aplicação não sobe e mostra:
+Se faltar uma variável obrigatória, a aplicação não sobe e mostra, por exemplo:
 
 ```text
 Variável de ambiente obrigatória ausente ou vazia: DB_URL.
@@ -199,19 +179,17 @@ Variável de ambiente obrigatória ausente ou vazia: DB_URL.
 
 ## Usando a API
 
-### Endpoints disponíveis
-
 | Método | Rota | Acesso | Resposta |
 |---|---|---|---|
 | `GET` | `/actuator/health` | Público | `200 {"status":"UP"}` ou `503 {"status":"DOWN"}` |
 | `GET` | `/v3/api-docs` | Público | Documento OpenAPI 3.1 |
 | `GET` | `/swagger-ui.html` | Público | Swagger UI |
-| qualquer | qualquer outra rota | Autenticado | Sem credencial: `401` (os endpoints de negócio chegam na Fase 2) |
+| Qualquer | Qualquer outra rota | Autenticado | Sem credencial, `401`. Os endpoints de negócio entram na Fase 2 |
 
-O registro completo, com convenções e catálogo de erros, está em
+As convenções, o catálogo de erros e os endpoints estão em
 [`docs/arquitetura/api-contract.md`](docs/arquitetura/api-contract.md).
 
-### Formato de erro
+Exemplo de erro:
 
 ```bash
 curl -i http://localhost:8080/api/v1/contas
@@ -233,62 +211,61 @@ Content-Type: application/problem+json
 }
 ```
 
-O cliente decide pelo `type`, nunca pelo texto. Os tipos disponíveis são `bad-request`,
+O cliente deve decidir pelo `type`, nunca pelo texto. Os tipos existentes são `bad-request`,
 `validation-error`, `unauthorized`, `forbidden`, `not-found`, `method-not-allowed`,
-`unsupported-media-type` e `internal-error`. Informe o `traceId` ao reportar um problema: ele
+`unsupported-media-type` e `internal-error`. Ao reportar um problema, informe o `traceId`: ele
 localiza a requisição nos logs.
 
-## Testes e qualidade
+## Testes
 
 ```bash
 ./mvnw -B verify
 ```
 
-Compila, roda a suíte completa e gera o jar. Os testes de integração sobem um PostgreSQL 18 real
-com **Testcontainers**, então o Docker precisa estar ligado. Nenhum teste usa credencial real nem
-serviço externo.
+No PowerShell, use `.\mvnw.cmd -B verify`. O comando compila, roda a suíte completa e gera o jar.
+Os testes de integração sobem um PostgreSQL 18 real com Testcontainers, então o Docker precisa
+estar ligado. Nenhum teste usa credencial real nem serviço externo.
 
-O que a suíte cobre:
+A suíte cobre:
 
-- inicialização, Flyway e recusa de startup sem configuração (em subprocesso, com ambiente
-  controlado);
-- o contrato de erro para 400, validação, 401, 403, 404, 405, 415 e 500, inclusive erros fora do
-  MVC;
-- negação por padrão, lista exata de rotas públicas e guarda estrutural contra liberações
+- a inicialização, o Flyway e a recusa de subir sem configuração obrigatória;
+- o contrato de erro para 400, validação, 401, 403, 404, 405, 415 e 500, inclusive erros que
+  acontecem fora do MVC;
+- a negação por padrão, a lista exata de rotas públicas e uma guarda contra liberações
   indevidas;
-- `traceId` propagado do `traceparent` até o corpo e o log;
-- ausência de credenciais nos logs (header `Authorization` e senha do banco);
-- health `UP` e `DOWN` (com o banco realmente parado) e documento OpenAPI 3.1.
+- o `traceId` propagado do `traceparent` até o corpo e o log;
+- a ausência de credenciais nos logs;
+- o health `UP` e `DOWN` (com o banco realmente parado) e o documento OpenAPI 3.1.
 
-## CI e segurança da cadeia de suprimentos
+## Integração contínua
 
 Todo pull request para o `main` passa pelo [workflow de CI](.github/workflows/ci.yml), e o merge
 só é liberado com os checks verdes:
 
-| Job | O que garante |
+| Job | O que verifica |
 |---|---|
-| `build` | Compilação e suíte completa de testes |
+| `build` | Compilação, testes e links da documentação |
 | `container` | Imagem construída, aplicação e banco saudáveis no Compose e teste de fumaça |
-| `secrets` | [gitleaks](https://github.com/gitleaks/gitleaks) no histórico inteiro, com [regras próprias](.gitleaks.toml) para credencial em `.properties`, `.yml` e `.env` |
-| `dependency-review` | Nenhuma dependência nova com vulnerabilidade conhecida, sobre o grafo Maven resolvido |
+| `secrets` | [gitleaks](https://github.com/gitleaks/gitleaks) no histórico inteiro, com [regras próprias](.gitleaks.toml) para credenciais em `.properties`, `.yml` e `.env` |
+| `dependency-review` | Dependência nova com vulnerabilidade conhecida de severidade moderada ou maior |
 
-Além disso: actions fixadas por SHA, imagens Docker fixadas por digest, Dependabot semanal,
-secret scanning e push protection do GitHub ativos, e o `main` protegido contra force-push.
+As actions são fixadas por SHA e as imagens base do `Dockerfile`, por digest. O Dependabot propõe
+atualizações toda semana, e o `main` é protegido contra force-push.
 
 ## Estrutura do repositório
 
 ```text
 .
 ├── src/main/java/br/com/fintech/
-│   ├── NexaFinanceApplication.java   # bootstrap
+│   ├── NexaFinanceApplication.java   # inicialização
 │   ├── config/                       # segurança, /api/v1, OpenAPI, locale, Tomcat, configuração obrigatória
-│   └── shared/web/                   # contrato de erro (RFC 9457) e handlers 401/403
-├── src/main/resources/               # application*.yml, mensagens pt-BR, db/migration (Flyway)
+│   └── shared/web/                   # contrato de erro (RFC 9457) e respostas 401/403
+├── src/main/resources/               # application*.yml, mensagens em português, db/migration (Flyway)
 ├── src/test/java/                    # testes de unidade e de integração (Testcontainers)
 ├── docs/                             # ADRs, arquitetura, contrato da API e runbooks
-├── scripts/smoke-test.sh             # teste de fumaça da API no ar
-├── Dockerfile                        # build multi-stage, runtime sem root
-└── compose.yaml                      # PostgreSQL + aplicação (profile app)
+├── scripts/                          # teste de fumaça e verificação de links
+├── Dockerfile                        # build em estágios, runtime sem root
+└── compose.yaml                      # PostgreSQL e aplicação (profile app)
 ```
 
 ## Documentação
@@ -298,29 +275,17 @@ secret scanning e push protection do GitHub ativos, e o `main` protegido contra 
 | [`docs/arquitetura/`](docs/arquitetura/README.md) | Arquitetura e componentes |
 | [`docs/arquitetura/api-contract.md`](docs/arquitetura/api-contract.md) | Convenções, catálogo de erros e endpoints |
 | [`docs/adr/`](docs/adr/README.md) | Decisões de arquitetura (ADR-0001 a ADR-0005) |
-| [`docs/runbooks/`](docs/runbooks/README.md) | Procedimentos operacionais (ex.: segredo vazado) |
+| [`docs/runbooks/`](docs/runbooks/README.md) | Procedimentos operacionais |
 
 ## Roadmap
 
 | Fase | Entrega | Situação |
 |---|---|---|
-| 0 e 1 — Fundação | Build, ambiente, contrato de erro, segurança, health, OpenAPI, contêiner e CI | ✅ Concluída |
-| 2 — Identidade | Cadastro, login com token e perfil | Planejada |
-| 3 — Contas e lançamentos | Contas, receitas, despesas, histórico e resumo | Planejada |
-| 4 — Transferências | Transferência entre contas com consistência | Planejada |
-| 5 — Portfólio | Dados de demonstração, exemplos e diagramas | Planejada |
-| — Interface visual | Telas web sobre a API, rodando local no mesmo Compose | Planejada (após a Fase 3) |
+| Base | Build, ambiente, contrato de erro, segurança, health, OpenAPI, contêiner e CI | Concluída |
+| Identidade | Cadastro, login com token e perfil | Planejada |
+| Contas e lançamentos | Contas, receitas, despesas, histórico e resumo | Planejada |
+| Transferências | Transferência entre contas com consistência | Planejada |
+| Interface web | Telas sobre a API, rodando localmente no mesmo Compose | Planejada |
 
-## Fora de escopo
-
-Nesta fase **não** existem: cadastro e login, regras financeiras, CORS para frontend, rate
-limiting, deploy em ambiente público nem migração de dados do sistema antigo. Cada item tem sua
-fase no [roadmap](#roadmap).
-
----
-
-<div align="center">
-
-Feito por **Maykon Tardoche** · projeto de portfólio e acadêmico (FIAP)
-
-</div>
+Ainda não existem cadastro e login, regras financeiras, CORS para frontend, rate limiting nem deploy
+em ambiente público. Cada item entra na fase correspondente.
