@@ -1,9 +1,9 @@
 # Ambiente local. Credenciais vêm do .env (copie de .env.example).
-#   docker compose up -d db                       só o banco (app via ./mvnw, perfil local)
-#   docker compose --profile app up -d --build    banco + aplicação em contêiner
+#   docker compose up -d db mail                  banco e caixa de e-mail (app via ./mvnw, perfil local)
+#   docker compose --profile app up -d --build    banco, caixa de e-mail e aplicação em contêiner
 name: nexa-finance
 
-# Rotação de log para os dois serviços: com o banco fora, cada checagem do health loga ~18 kB.
+# Rotação de log para todos os serviços: com o banco fora, cada checagem do health loga ~18 kB.
 x-logging: &logging
   driver: json-file
   options:
@@ -32,6 +32,27 @@ services:
     mem_limit: 512m
     logging: *logging
 
+  # Caixa de e-mail local: recebe tudo o que a aplicação envia e não repassa nada para fora.
+  mail:
+    image: axllent/mailpit:v1.32.0
+    # Só aceita a caixa aberta por localhost: uma página maliciosa no navegador não lê os e-mails
+    # (que trazem links de confirmação e de redefinição) por DNS rebinding.
+    command: ["--allowed-hosts", "localhost:8025,127.0.0.1:8025"]
+    ports:
+      # Só na interface local: SMTP para a aplicação rodando no host e a caixa no navegador.
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    # O healthcheck vem da imagem (mailpit readyz). As mensagens ficam só em memória/tmpfs.
+    mem_limit: 128m
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+
   app:
     profiles: [app]
     build: .
@@ -39,11 +60,18 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mail:
+        condition: service_healthy
     environment:
       # Dentro da rede do Compose o banco é o serviço "db", não o localhost do .env.
       DB_URL: jdbc:postgresql://db:5432/${DB_NAME:?defina DB_NAME no .env (modelo em .env.example)}
       DB_USERNAME: ${DB_USERNAME:?defina DB_USERNAME no .env (modelo em .env.example)}
       DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env (modelo em .env.example)}
+      # Na rede do Compose, o SMTP é o serviço "mail".
+      MAIL_HOST: mail
+      MAIL_PORT: "1025"
+      MAIL_FROM: ${MAIL_FROM:-}
+      APP_BASE_URL: ${APP_BASE_URL:?defina APP_BASE_URL no .env (modelo em .env.example)}
     ports:
       # Só na interface local; a porta do host vem de SERVER_PORT (padrão 8080).
       - "127.0.0.1:${SERVER_PORT:-8080}:8080"

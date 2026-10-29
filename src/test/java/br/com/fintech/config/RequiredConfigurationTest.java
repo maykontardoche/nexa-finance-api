@@ -16,7 +16,8 @@ class RequiredConfigurationTest {
         MockEnvironment env = new MockEnvironment()
                 .withProperty("DB_URL", "jdbc:postgresql://localhost:5432/nexa")
                 .withProperty("DB_USERNAME", "nexa")
-                .withProperty("DB_PASSWORD", "s3nh4");
+                .withProperty("DB_PASSWORD", "s3nh4")
+                .withProperty("APP_BASE_URL", "http://localhost:8080");
 
         assertThatCode(() -> check.initialize(contextWith(env))).doesNotThrowAnyException();
     }
@@ -29,10 +30,10 @@ class RequiredConfigurationTest {
 
         assertThatThrownBy(() -> check.initialize(contextWith(env)))
                 .isInstanceOf(MissingConfigurationException.class)
-                .hasMessage("Configuração obrigatória ausente: DB_URL, DB_USERNAME")
+                .hasMessage("Configuração obrigatória ausente: DB_URL, DB_USERNAME, APP_BASE_URL")
                 .satisfies(e -> org.assertj.core.api.Assertions
                         .assertThat(((MissingConfigurationException) e).getVariables())
-                        .containsExactly("DB_URL", "DB_USERNAME"));
+                        .containsExactly("DB_URL", "DB_USERNAME", "APP_BASE_URL"));
     }
 
     private static GenericApplicationContext contextWith(MockEnvironment env) {

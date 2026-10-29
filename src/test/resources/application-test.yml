@@ -3,3 +3,6 @@
 spring:
   main:
     banner-mode: off
+
+# Variável obrigatória da aplicação; o valor só aparece nos links dos e-mails de teste.
+APP_BASE_URL: http://localhost:8080

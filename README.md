@@ -119,10 +119,12 @@ Copy-Item .env.example .env
 docker compose --profile app up -d --build --wait
 ```
 
-O `--wait` só termina quando a aplicação e o banco estão saudáveis. Depois disso:
+O `--wait` só termina quando a aplicação, o banco e a caixa de e-mail estão saudáveis. Depois disso:
 
 - health: <http://localhost:8080/actuator/health> responde `{"status":"UP"}`;
-- Swagger UI: <http://localhost:8080/swagger-ui.html>.
+- Swagger UI: <http://localhost:8080/swagger-ui.html>;
+- caixa de e-mail local (Mailpit): <http://localhost:8025>. Todo e-mail que a API envia chega
+  aqui, e nenhum sai para a internet.
 
 Para conferir health, segurança e documentação de uma vez, rode o teste de fumaça. Ele precisa de
 bash, que vem com o Git Bash no Windows:
@@ -142,7 +144,7 @@ Linux, macOS ou Git Bash:
 git clone https://github.com/maykontardoche/nexa-finance-api.git
 cd nexa-finance-api
 cp .env.example .env
-docker compose up -d db
+docker compose up -d db mail
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
@@ -152,12 +154,12 @@ PowerShell (as aspas no `-D` são necessárias; sem elas, o PowerShell quebra o 
 git clone https://github.com/maykontardoche/nexa-finance-api.git
 cd nexa-finance-api
 Copy-Item .env.example .env
-docker compose up -d db
+docker compose up -d db mail
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
 No perfil `local`, a aplicação lê o mesmo `.env` do Compose e escreve os logs em texto legível. O
-health e o Swagger ficam nos mesmos endereços.
+health, o Swagger e a caixa de e-mail ficam nos mesmos endereços.
 
 ## Variáveis de ambiente
 
@@ -171,6 +173,10 @@ fictícios e um comentário para cada variável.
 | `DB_PASSWORD` | Sim | `troque-me` | Senha do banco. Troque por uma sua |
 | `DB_NAME` | Sim, no Compose | `nexa` | Nome do banco criado pelo serviço `db` |
 | `SERVER_PORT` | Não | `8080` | Porta HTTP. No Compose, é a porta publicada no host |
+| `APP_BASE_URL` | Sim | `http://localhost:8080` | Endereço em que você acessa a API; base dos links enviados por e-mail. Se mudar `SERVER_PORT`, mude aqui também |
+| `MAIL_HOST` | Não | `localhost` | Servidor SMTP ao rodar com o JDK (padrão: a caixa local do Compose). No Compose, a aplicação usa o serviço `mail` |
+| `MAIL_PORT` | Não | `1025` | Porta SMTP ao rodar com o JDK |
+| `MAIL_FROM` | Não | `Nexa Finance <nao-responda@nexa-finance.local>` | Remetente dos e-mails |
 
 Se faltar uma variável obrigatória, a aplicação não sobe e mostra, por exemplo:
 
@@ -260,14 +266,15 @@ atualizações toda semana, e o `main` é protegido contra force-push.
 ├── src/main/java/br/com/fintech/
 │   ├── NexaFinanceApplication.java   # inicialização
 │   ├── auth/, user/                  # módulos de identidade (entidades e repositórios JPA)
-│   ├── config/                       # segurança, /api/v1, OpenAPI, locale, Tomcat, configuração obrigatória
-│   └── shared/web/                   # contrato de erro (RFC 9457) e respostas 401/403
+│   ├── config/                       # segurança, /api/v1, OpenAPI, locale, Tomcat, configuração e execução assíncrona
+│   ├── shared/mail/                  # envio de e-mail depois do commit, em segundo plano
+│   └── shared/web/                   # contrato de erro (RFC 9457), respostas 401/403 e origem da requisição
 ├── src/main/resources/               # application*.yml, mensagens em português, db/migration (Flyway)
 ├── src/test/java/                    # testes de unidade e de integração (Testcontainers)
 ├── docs/                             # ADRs, arquitetura, contrato da API e runbooks
 ├── scripts/                          # teste de fumaça e verificação de links
 ├── Dockerfile                        # build em estágios, runtime sem root
-└── compose.yaml                      # PostgreSQL e aplicação (profile app)
+└── compose.yaml                      # PostgreSQL, caixa de e-mail (Mailpit) e aplicação (profile app)
 ```
 
 ## Documentação
