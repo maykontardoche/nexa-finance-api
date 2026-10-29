@@ -111,4 +111,22 @@ public class User {
     public Instant getUpdatedAt() {
         return updatedAt;
     }
+
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
+    }
+
+    /**
+     * Confirma o e-mail. Repetir não muda nada: a data da primeira confirmação fica.
+     *
+     * @return se a confirmação aconteceu agora
+     */
+    public boolean verifyEmail(Instant now) {
+        if (emailVerifiedAt != null) {
+            return false;
+        }
+        emailVerifiedAt = now;
+        updatedAt = now;
+        return true;
+    }
 }

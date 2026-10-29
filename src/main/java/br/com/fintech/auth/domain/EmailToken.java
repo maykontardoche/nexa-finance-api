@@ -58,6 +58,12 @@ public class EmailToken {
         this.expiresAt = expiresAt;
     }
 
+    /** Token novo, válido pelo prazo da finalidade a partir de {@code now}. */
+    public static EmailToken issue(UUID userId, EmailTokenPurpose purpose, String tokenHash,
+            @Nullable String newEmail, Instant now) {
+        return new EmailToken(userId, purpose, tokenHash, newEmail, now, now.plus(purpose.validity()));
+    }
+
     /** Só para o JPA, que preenche os campos por reflexão. */
     protected EmailToken() {
         this.userId = new UUID(0, 0);
@@ -97,5 +103,13 @@ public class EmailToken {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    /**
+     * Ainda não usado e dentro do prazo. O instante exato da expiração já não vale. O consumo
+     * no banco repete esta regra de forma atômica (ver {@code EmailTokenRepository#consume}).
+     */
+    public boolean isUsableAt(Instant now) {
+        return usedAt == null && now.isBefore(expiresAt);
     }
 }

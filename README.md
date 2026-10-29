@@ -26,8 +26,9 @@ produção.
 
 ## Estado atual
 
-A base da API está pronta. Ainda não há endpoints de negócio: cadastro, login, contas e
-lançamentos entram nas próximas fases (veja o [roadmap](#roadmap)). Hoje a API já:
+A base da API está pronta e a identidade começou: já dá para se cadastrar e confirmar o e-mail
+pelo link que chega à caixa de e-mail local. Login, perfil, contas e lançamentos entram nas
+próximas versões (veja o [roadmap](#roadmap)). Hoje a API já:
 
 - sobe junto com o banco com um único comando, sem precisar instalar Java;
 - expõe um health check público que reflete a conexão com o banco;
@@ -291,10 +292,10 @@ atualizações toda semana, e o `main` é protegido contra force-push.
 | Fase | Entrega | Situação |
 |---|---|---|
 | Base | Build, ambiente, contrato de erro, segurança, health, OpenAPI, contêiner e CI | Concluída |
-| Identidade | Cadastro, login com token e perfil | Planejada |
+| Identidade | Cadastro, login com token e perfil | Em andamento: cadastro e confirmação de e-mail prontos |
 | Contas e lançamentos | Contas, receitas, despesas, histórico e resumo | Planejada |
 | Transferências | Transferência entre contas com consistência | Planejada |
 | Interface web | Telas sobre a API, rodando localmente no mesmo Compose | Planejada |
 
-Ainda não existem cadastro e login, regras financeiras, CORS para frontend, rate limiting nem deploy
-em ambiente público. Cada item entra na fase correspondente.
+Ainda não existem login, regras financeiras, CORS para frontend, rate limiting nem deploy em
+ambiente público. Cada item entra na fase correspondente.

@@ -64,8 +64,16 @@ class SecurityIntegrationTests {
     @Test
     void publicListIsExactlyTheOneInAdr0005() {
         // Abrir rota pública exige mudar esta lista de propósito.
-        assertThat(SecurityConfig.PUBLIC_PATHS).containsExactly(
-                "/actuator/health", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**");
+        assertThat(SecurityConfig.PUBLIC_ROUTES)
+                .extracting(route -> route.method().name() + " " + route.pattern())
+                .containsExactly(
+                        "GET /actuator/health", "HEAD /actuator/health",
+                        "GET /v3/api-docs/**", "HEAD /v3/api-docs/**",
+                        "GET /swagger-ui.html", "HEAD /swagger-ui.html",
+                        "GET /swagger-ui/**", "HEAD /swagger-ui/**",
+                        "POST /api/v1/auth/register",
+                        "GET /api/v1/auth/email-verification",
+                        "POST /api/v1/auth/email-verification/resend");
     }
 
     @ParameterizedTest(name = "{0} {1} -> {2}")
@@ -87,7 +95,14 @@ class SecurityIntegrationTests {
             "GET, /actuator/beans",
             "GET, /actuator",              // nem o índice do Actuator
             "GET, /error",                 // só o dispatch de ERROR é liberado, não o caminho
-            "GET, /v3/api-docs.yaml"})
+            "GET, /v3/api-docs.yaml",
+            // Rotas de cadastro: públicas só no método previsto.
+            "GET, /api/v1/auth/register",
+            "PUT, /api/v1/auth/register",
+            "POST, /api/v1/auth/email-verification",
+            "GET, /api/v1/auth/email-verification/resend",
+            "POST, /api/v1/auth/login",
+            "GET, /api/v1/auth/register/x"})
     void everythingElseIsUnauthorizedWithoutRevealingTheRoute(String method, String path) throws Exception {
         HttpResponse<String> response = send(method, path, Map.of());
 

@@ -81,6 +81,11 @@ public class ProblemFactory {
         return validationProblem(errors, request);
     }
 
+    /** {@code validation-error} de uma regra de negócio sobre um campo (ex.: senha recusada). */
+    public ProblemDetail validation(FieldViolation violation, HttpServletRequest request) {
+        return validationProblem(new ArrayList<>(List.of(violation)), request);
+    }
+
     private ProblemDetail validationProblem(List<FieldViolation> errors, HttpServletRequest request) {
         ProblemDetail problem = create(ProblemType.VALIDATION, ProblemType.VALIDATION.status(), request);
         errors.sort(Comparator.comparing(FieldViolation::field, Comparator.nullsFirst(Comparator.naturalOrder()))

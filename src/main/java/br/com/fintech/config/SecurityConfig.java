@@ -14,26 +14,41 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Negação por padrão antes do roteamento (ADR-0005): só a lista pública responde sem credencial;
- * todo o resto, inclusive rota inexistente, recebe 401 no formato do ADR-0004. Ainda não há
- * mecanismo de login (Fase 2), então nenhuma requisição real consegue se autenticar.
+ * todo o resto, inclusive rota inexistente, recebe 401 no formato do ADR-0004.
  */
 @Configuration(proxyBeanMethods = false)
 @EnableMethodSecurity
 public class SecurityConfig {
 
     /**
-     * Rotas públicas, só para leitura (GET e HEAD, que o healthcheck de contêiner usa). Rota nova
-     * aqui exige atualizar o teste que fixa a lista; {@code permitAll()} fora desta lista é
-     * proibido.
+     * Rotas públicas, por método e caminho: abrir um caminho não abre os outros métodos nele.
+     * Rota nova aqui exige atualizar o teste que fixa a lista; {@code permitAll()} fora desta
+     * lista é proibido.
      */
-    public static final List<String> PUBLIC_PATHS =
-            List.of("/actuator/health", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**");
+    public static final List<PublicRoute> PUBLIC_ROUTES = List.of(
+            // Plataforma, só leitura (HEAD é o que o healthcheck do contêiner usa).
+            new PublicRoute(HttpMethod.GET, "/actuator/health"),
+            new PublicRoute(HttpMethod.HEAD, "/actuator/health"),
+            new PublicRoute(HttpMethod.GET, "/v3/api-docs/**"),
+            new PublicRoute(HttpMethod.HEAD, "/v3/api-docs/**"),
+            new PublicRoute(HttpMethod.GET, "/swagger-ui.html"),
+            new PublicRoute(HttpMethod.HEAD, "/swagger-ui.html"),
+            new PublicRoute(HttpMethod.GET, "/swagger-ui/**"),
+            new PublicRoute(HttpMethod.HEAD, "/swagger-ui/**"),
+            // Cadastro e confirmação de e-mail: quem chama ainda não tem conta.
+            new PublicRoute(HttpMethod.POST, "/api/v1/auth/register"),
+            new PublicRoute(HttpMethod.GET, "/api/v1/auth/email-verification"),
+            new PublicRoute(HttpMethod.POST, "/api/v1/auth/email-verification/resend"));
+
+    /** Um método num padrão de caminho do Spring Security. */
+    public record PublicRoute(HttpMethod method, String pattern) {
+    }
 
     @Bean
     SecurityFilterChain apiSecurity(HttpSecurity http, ProblemDetailsSecurityHandlers problems) throws Exception {
         http
-                // API stateless, sem cookie de sessão: CSRF não se aplica. Reavaliar na Fase 2 se a
-                // autenticação usar cookie.
+                // API stateless, sem cookie de sessão: CSRF não se aplica. Reavaliar se a
+                // autenticação passar a usar cookie.
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .requestCache(AbstractHttpConfigurer::disable)
@@ -43,13 +58,15 @@ public class SecurityConfig {
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(problems)
                         .accessDeniedHandler(problems))
-                .authorizeHttpRequests(auth -> auth
-                        // Só o encaminhamento interno do container para renderizar o erro; um
-                        // GET /error direto é REQUEST e cai no authenticated() abaixo.
-                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers(HttpMethod.GET, PUBLIC_PATHS.toArray(String[]::new)).permitAll()
-                        .requestMatchers(HttpMethod.HEAD, PUBLIC_PATHS.toArray(String[]::new)).permitAll()
-                        .anyRequest().authenticated());
+                .authorizeHttpRequests(auth -> {
+                    // Só o encaminhamento interno do container para renderizar o erro; um
+                    // GET /error direto é REQUEST e cai no authenticated() abaixo.
+                    auth.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
+                    for (PublicRoute route : PUBLIC_ROUTES) {
+                        auth.requestMatchers(route.method(), route.pattern()).permitAll();
+                    }
+                    auth.anyRequest().authenticated();
+                });
         return http.build();
     }
 }

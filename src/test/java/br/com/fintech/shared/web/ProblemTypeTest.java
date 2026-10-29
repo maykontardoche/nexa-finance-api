@@ -24,7 +24,7 @@ class ProblemTypeTest {
         // Mudar esta lista exige atualizar o ADR-0004 / api-contract.md: slug é contrato.
         assertThat(Arrays.stream(ProblemType.values()).map(ProblemType::slug)).containsExactly(
                 "bad-request", "validation-error", "unauthorized", "forbidden", "not-found",
-                "method-not-allowed", "unsupported-media-type", "internal-error");
+                "method-not-allowed", "unsupported-media-type", "internal-error", "invalid-token");
     }
 
     @ParameterizedTest

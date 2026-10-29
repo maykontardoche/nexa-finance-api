@@ -57,7 +57,7 @@ flowchart LR
 | `NexaFinanceApplication` | Bootstrap; exclui o usuário em memória do Spring Security | `br.com.fintech` |
 | `RequiredConfiguration` + `MissingConfigurationFailureAnalyzer` | Recusa o startup sem `DB_URL`/`DB_USERNAME`/`DB_PASSWORD`, nomeando só a variável | `br.com.fintech.config` |
 | `ApiVersioningConfig` | Prefixo `/api/v1` em todo `@RestController` do projeto | `br.com.fintech.config` |
-| `SecurityConfig` | Lista pública explícita (`PUBLIC_PATHS`), resto autenticado, stateless, method security | `br.com.fintech.config` |
+| `SecurityConfig` | Lista pública explícita por método e caminho (`PUBLIC_ROUTES`), resto autenticado, stateless, method security | `br.com.fintech.config` |
 | `LocaleConfig` | Locale fixo pt-BR para erros e Bean Validation | `br.com.fintech.config` |
 | `OpenApiConfig` | Metadados do OpenAPI 3.1, schema `ProblemDetail` e 401/500 em toda operação | `br.com.fintech.config` |
 | `WebServerConfig` | Tomcat repassa `%2F`/`%5C` ao firewall do Spring (erro no contrato, não em HTML) | `br.com.fintech.config` |
@@ -85,7 +85,7 @@ flowchart LR
   `ON DELETE CASCADE` no banco.
 - **Tratamento de erro:** só pelo `ProblemFactory`; slug novo entra no `ProblemType`, nas
   mensagens pt-BR e no [`api-contract.md`](api-contract.md) (ADR-0004).
-- **Autorização:** sempre no servidor; rota pública só pela `PUBLIC_PATHS`, com teste (ADR-0005).
+- **Autorização:** sempre no servidor; rota pública só pela `PUBLIC_ROUTES` (método + caminho), com teste (ADR-0005).
 - **Logs e auditoria:** `traceId`/`spanId` em todo log de requisição; JSON (ECS) no contêiner;
   nunca senha, token, header `Authorization` ou corpo de requisição em log. O driver do
   PostgreSQL roda com `logServerErrorDetail=false`, para que uma violação de UNIQUE não leve o

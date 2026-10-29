@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Guarda estrutural do ADR-0005, que o teste comportamental não cobre. O teste da lista pública fixa
- * {@code PUBLIC_PATHS}, mas um {@code permitAll()} escrito direto na cadeia ou um
+ * {@code PUBLIC_ROUTES}, mas um {@code permitAll()} escrito direto na cadeia ou um
  * {@code web.ignoring()} passaria por fora dela. Aqui o código de produção é lido como texto
  * (comentários ignorados): qualquer liberação nova falha o build até ser revista.
  */
@@ -24,8 +24,8 @@ class SecurityGuardrailsTest {
 
     @Test
     void permitAllExistsOnlyInSecurityConfigForErrorDispatchAndPublicPaths() throws IOException {
-        // 3 = dispatch de ERROR + GET e HEAD em PUBLIC_PATHS. Mudou? Atualize o ADR e o teste da lista pública junto.
-        assertThat(occurrences("permitAll(")).isEqualTo(Map.of(SECURITY_CONFIG, 3));
+        // 2 = dispatch de ERROR + o laço sobre PUBLIC_ROUTES. Mudou? Atualize o ADR e o teste da lista pública junto.
+        assertThat(occurrences("permitAll(")).isEqualTo(Map.of(SECURITY_CONFIG, 2));
     }
 
     @Test
