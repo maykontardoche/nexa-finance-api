@@ -15,7 +15,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 public final class RequiredConfiguration
         implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
-    static final List<String> REQUIRED = List.of("DB_URL", "DB_USERNAME", "DB_PASSWORD");
+    static final List<String> REQUIRED = List.of("DB_URL", "DB_USERNAME", "DB_PASSWORD", "APP_BASE_URL");
 
     @Override
     public void initialize(ConfigurableApplicationContext context) {

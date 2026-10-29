@@ -41,9 +41,11 @@ class MissingConfigurationStartupTest {
         Path output = workDir.resolve("saida.log");
         builder.redirectOutput(output.toFile());
         Map<String, String> env = builder.environment();
-        env.keySet().removeIf(name -> name.startsWith("DB_") || name.startsWith("SPRING_"));
+        env.keySet().removeIf(name -> name.startsWith("DB_") || name.startsWith("SPRING_")
+                || name.startsWith("APP_") || name.startsWith("MAIL_"));
         env.put("DB_USERNAME", USERNAME);
         env.put("DB_PASSWORD", PASSWORD);
+        env.put("APP_BASE_URL", "http://localhost:8080");
 
         Process process = builder.start();
         boolean finished = process.waitFor(STARTUP_TIMEOUT_SECONDS, TimeUnit.SECONDS);

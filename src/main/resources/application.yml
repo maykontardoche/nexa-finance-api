@@ -16,6 +16,21 @@ spring:
         logServerErrorDetail: false
   flyway:
     locations: classpath:db/migration
+  mail:
+    # Padrão: a caixa de e-mail local do Compose (serviço mail) vista do host.
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    properties:
+      # Em ms. Sem limite, um SMTP que não responde prende a thread de envio indefinidamente.
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
+  task:
+    execution:
+      shutdown:
+        # Ao desligar, espera os e-mails já na fila em vez de descartá-los.
+        await-termination: true
+        await-termination-period: 15s
   jpa:
     # O schema é do Flyway; o Hibernate só confere que as entidades batem com ele.
     hibernate:
@@ -24,6 +39,10 @@ spring:
     open-in-view: false
 
 management:
+  health:
+    mail:
+      # Caixa de e-mail fora do ar não deixa a API indisponível: o envio falha só com log.
+      enabled: false
   endpoints:
     web:
       # Sem o índice /actuator (links dos endpoints): fora o health, o Actuator não existe na web.
@@ -46,6 +65,13 @@ management:
       # ERROR, e o MDC do log passaria a apontar para ele. Sem exporter, esses spans
       # também não têm uso.
       spring.security: false
+
+app:
+  # Endereço base dos links enviados por e-mail. Obrigatória (RequiredConfiguration).
+  base-url: ${APP_BASE_URL}
+  mail:
+    # Vazio usa o remetente padrão (AppProperties).
+    from: ${MAIL_FROM:}
 
 server:
   port: ${SERVER_PORT:8080}

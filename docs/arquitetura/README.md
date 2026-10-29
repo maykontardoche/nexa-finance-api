@@ -10,7 +10,9 @@ Não há deploy público nem integração externa em tempo de execução. Os usu
 desenvolvedores que chamam a API diretamente ou pelo Swagger UI.
 
 Descrição do diagrama de contexto: o cliente HTTP (navegador no Swagger UI, `curl` ou, no futuro,
-a interface visual) chama a API. A API usa só o PostgreSQL. No desenvolvimento e na CI, o
+a interface visual) chama a API. A API usa o PostgreSQL e envia e-mails por SMTP para uma
+caixa de e-mail local (Mailpit), que o avaliador abre no navegador e que não repassa nada para
+fora. No desenvolvimento e na CI, o
 GitHub Actions constrói, testa e verifica o código, e o Testcontainers sobe um PostgreSQL
 descartável para os testes.
 
@@ -18,6 +20,8 @@ descartável para os testes.
 flowchart LR
   user[Avaliador ou desenvolvedor] -->|HTTP| api[Nexa Finance API<br/>Spring Boot 4.1 / Java 25]
   api -->|JPA + Flyway| db[(PostgreSQL 18)]
+  api -->|SMTP, depois do commit| mail[Mailpit<br/>caixa de e-mail local]
+  user -->|navegador :8025| mail
   ci[GitHub Actions] -.->|build, testes, fumaça, varreduras| api
 ```
 
@@ -62,6 +66,10 @@ flowchart LR
 | `ApiExceptionHandler` | Converte erros do MVC e da segurança em RFC 9457; loga 5xx com stack só no servidor | `br.com.fintech.shared.web` |
 | `ProblemDetailsSecurityHandlers` | 401/403 dos filtros, delegados ao `ApiExceptionHandler` | `br.com.fintech.shared.web` |
 | `ProblemDetailsErrorController` | Erros fora do MVC (filtros, container), mesmo formato e headers de segurança | `br.com.fintech.shared.web` |
+| `AppProperties` | Configuração própria (`app.*`): `APP_BASE_URL` validada no startup e remetente dos e-mails | `br.com.fintech.config` |
+| `AsyncConfig` | `@Async` com o contexto do trace propagado para a thread do executor | `br.com.fintech.config` |
+| `MailNotifier` + `MailMessage` + `MailLinks` | E-mail em texto pt-BR só depois do commit e em segundo plano; falha de SMTP vira WARN sem destinatário nem conteúdo; links absolutos sobre `APP_BASE_URL` | `br.com.fintech.shared.mail` |
+| `RequestOriginResolver` + `RequestOrigin` | IP truncado (/24 IPv4, /48 IPv6, sem confiar em `X-Forwarded-For`) e navegador/sistema aproximados; o user-agent bruto não é guardado | `br.com.fintech.shared.web` |
 | Flyway | Migrations em `src/main/resources/db/migration`, aplicadas no startup; único dono do schema (ADR-0008) | dependência |
 | `User` + `UserRepository` | Conta do usuário (e-mail normalizado e único, só o hash da senha) | `br.com.fintech.user.domain` |
 | `Session`, `EmailToken`, `SecurityEvent` + repositórios | Sessões com o hash da credencial de renovação (ADR-0006), tokens de e-mail de uso único (só o hash) e atividade de segurança | `br.com.fintech.auth.domain` |
@@ -82,6 +90,10 @@ flowchart LR
   nunca senha, token, header `Authorization` ou corpo de requisição em log. O driver do
   PostgreSQL roda com `logServerErrorDetail=false`, para que uma violação de UNIQUE não leve o
   valor duplicado (e-mail, hash) para a exceção e o log.
+- **E-mail:** publicado com `MailNotifier.sendAfterCommit` dentro da transação do caso de uso
+  (fora de transação é erro). Envio depois do commit e assíncrono: operação desfeita não manda
+  e-mail e o tempo de resposta não depende do SMTP. O log do envio identifica o e-mail só pelo
+  tipo (`kind`), com o `traceId` da requisição de origem.
 
 ## Contrato de API
 
