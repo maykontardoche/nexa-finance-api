@@ -34,7 +34,7 @@ services:
 
   # Caixa de e-mail local: recebe tudo o que a aplicação envia e não repassa nada para fora.
   mail:
-    image: axllent/mailpit:v1.32.0
+    image: axllent/mailpit:v1.33.0
     # Só aceita a caixa aberta por localhost: uma página maliciosa no navegador não lê os e-mails
     # (que trazem links de confirmação e de redefinição) por DNS rebinding.
     command: ["--allowed-hosts", "localhost:8025,127.0.0.1:8025"]
