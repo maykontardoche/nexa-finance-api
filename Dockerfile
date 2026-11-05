@@ -3,7 +3,7 @@
 # reproduzível; atualizar o digest junto com a tag). Nenhum segredo entra na imagem: a
 # configuração vem do ambiente do contêiner (compose.yaml).
 
-FROM eclipse-temurin:25-jdk@sha256:3ab7fc8d0b4ade8fef96903fb36767c1dbb4fd1535dcfad85b59c17afbbb5857 AS build
+FROM eclipse-temurin:25-jdk@sha256:83f4a7fc27df94dcc7b8de04d14cbbba8da14406f921e966969c3b09000aa507 AS build
 WORKDIR /workspace
 
 # Sem unzip no PATH, o mvnw troca a distribuição .zip pela .tar.gz, cujo hash não é o do
@@ -23,7 +23,7 @@ COPY src/ src/
 RUN --mount=type=cache,target=/root/.m2 sh mvnw -B -q package -DskipTests \
     && java -Djarmode=tools -jar target/nexa-finance-api-*.jar extract --layers --application-filename app.jar --destination extracted
 
-FROM eclipse-temurin:25-jre@sha256:78f1f183913482ef390c2722f46c3f0ce76ada341d69590e7c482ec943ee72d5
+FROM eclipse-temurin:25-jre@sha256:ecdc0adb37bde1a281c4d245a3cd535004b1fc8322d560f5b09463b248c81df0
 
 # Usuário próprio, sem shell nem home: o processo nunca roda como root.
 RUN groupadd --system --gid 10001 app \
