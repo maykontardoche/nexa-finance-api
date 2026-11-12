@@ -27,7 +27,7 @@
         <opentelemetry.version>1.67.0</opentelemetry.version>
         <!-- Fora do BOM do Boot: versões fixadas aqui e atualizadas pelo Dependabot. -->
         <bouncycastle.version>1.86</bouncycastle.version>
-        <bucket4j.version>8.21.0</bucket4j.version>
+        <bucket4j.version>8.22.0</bucket4j.version>
         <uap-java.version>1.6.1</uap-java.version>
         <greenmail.version>2.1.15</greenmail.version>
     </properties>
