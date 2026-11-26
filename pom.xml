@@ -20,7 +20,7 @@
     <properties>
         <java.version>25</java.version>
         <!-- Linha 3.x do springdoc: a 3.2.0 é construída sobre o Boot 4.1.2 (pom do springdoc-openapi). -->
-        <springdoc.version>3.2.0</springdoc.version>
+        <springdoc.version>3.2.1</springdoc.version>
         <!-- Segurança: o Boot 4.1.2 gerencia a 1.62.0, afetada pelo GHSA-ccrj-gw8r-854m (CPU
              quadrática ao interpretar o header W3C tracestate, que a API recebe de qualquer
              cliente). Corrigido na 1.67.0. Remover este override quando o Boot gerenciar >= 1.67. -->
